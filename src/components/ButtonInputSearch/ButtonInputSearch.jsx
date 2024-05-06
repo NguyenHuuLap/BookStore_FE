@@ -4,7 +4,7 @@ import { SearchOutlined } from '@ant-design/icons'
 import InputComponent from '../InputComponent/InputComponent'
 import ButtonComponent from '../ButtonComponent/ButtonComponent'
 
-const ButtonInputSearch = (props) => {
+const ButttonInputSearch = (props) => {
   const {
     size, placeholder, textbutton,
     bordered, backgroundColorInput = '#fff',
@@ -32,4 +32,4 @@ const ButtonInputSearch = (props) => {
   )
 }
 
-export default ButtonInputSearch
+export default ButttonInputSearch

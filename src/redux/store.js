@@ -1,7 +1,6 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
-// import productReducer from './slides/productSlide'
+import productReducer from './slides/productSlide'
 import userReducer from './slides/userSlide'
-import counterReducer from './slides/counterSlide'
 // import orderReducer from './slides/orderSlide'
 // import {
 //   persistStore,
@@ -33,7 +32,7 @@ import counterReducer from './slides/counterSlide'
 
 export const store = configureStore({
   reducer: {
-    counter: counterReducer,
+    product: productReducer,
     user: userReducer
   }
   // middleware: (getDefaultMiddleware) =>

@@ -1,13 +1,17 @@
-import AdminPage from "../pages/AdminPage/AdminPage"
-import HomePage from "../pages/HomePage/HomePage"
+import AdminPage from "../pages/AdminPage/AdminPage";
+import DetailsOrderPage from "../pages/DetailsOrderPage/DetailsOrderPage";
+import HomePage from "../pages/HomePage/HomePage";
+import MyOrderPage from "../pages/MyOrder/MyOrder";
+import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
+import OrderPage from "../pages/OrderPage/OrderPage";
+import OrderSucess from "../pages/OrderSuccess/OrderSuccess";
+import PaymentPage from "../pages/PaymentPage/PaymentPage";
+import ProductDetailsPage from "../pages/ProductDetailPage/ProductDetailPage";
+import ProductsPage from "../pages/ProductPage/ProductPage";
+import ProfilePage from "../pages/Profile/ProfilePage";
 import LoginPage from "../pages/LoginPage/LoginPage"
-import NotFoundPage from "../pages/NotFoundPage/NotFoundPage"
-import OrderPage from "../pages/OrderPage/OrderPage"
-import ProductDetailPage from "../pages/ProductDetailPage/ProductDetailPage"
-import ProductPage from "../pages/ProductPage/ProductPage"
-import ProfilePage from "../pages/Profile/ProfilePage"
 import RegisterPage from "../pages/RegisterPage/RegisterPage"
-import TypeProductPage from "../pages/TypeProductPage/TypeProductPage"
+import TypeProductPage from "../pages/TypeProductPage/TypeProductPage";
 
 export const routes = [
     {
@@ -21,12 +25,32 @@ export const routes = [
         isShowHeader: true
     },
     {
-        path: '/product',
-        page: ProductPage,
+        path: '/my-order',
+        page: MyOrderPage,
         isShowHeader: true
     },
     {
-        path: '/type',
+        path: '/details-order/:id',
+        page: DetailsOrderPage,
+        isShowHeader: true
+    },
+    {
+        path: '/payment',
+        page: PaymentPage,
+        isShowHeader: true
+    },
+    {
+        path: '/orderSuccess',
+        page: OrderSucess,
+        isShowHeader: true
+    },
+    {
+        path: '/products',
+        page: ProductsPage,
+        isShowHeader: true
+    },
+    {
+        path: '/product/:type',
         page: TypeProductPage,
         isShowHeader: true
     },
@@ -41,8 +65,8 @@ export const routes = [
         isShowHeader: false
     },
     {
-        path: '/product-details',
-        page: ProductDetailPage,
+        path: '/product-details/:id',
+        page: ProductDetailsPage,
         isShowHeader: true
     },
     {
@@ -54,10 +78,10 @@ export const routes = [
         path: '/system/admin',
         page: AdminPage,
         isShowHeader: false,
-        isPrivate: true
+        isPrivated: true
     },
     {
         path: '*',
-        page: NotFoundPage,
-    },
+        page: NotFoundPage
+    }
 ]

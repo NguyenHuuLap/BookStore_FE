@@ -1,4 +1,4 @@
-import { Checkbox } from "antd";
+import { Checkbox, InputNumber } from "antd";
 import styled  from "styled-components";
 
 export const WrapperStyleHeader = styled.div`
@@ -93,4 +93,15 @@ export const CustomCheckbox = styled(Checkbox)`
   .ant-checkbox:hover .ant-checkbox-inner {
     border-color: #9255FD;
   }
+`
+
+export const WrapperInputNumber = styled(InputNumber)`
+    &.ant-input-number.ant-input-number-sm {
+        width: 40px;
+        border-top: none;
+        border-bottom: none;
+        .ant-input-number-handler-wrap {
+            display: none !important;
+        }
+    };
 `

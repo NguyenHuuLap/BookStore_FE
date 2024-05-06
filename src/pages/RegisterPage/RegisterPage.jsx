@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import ButtonComponent from '../../components/ButtonComponent/ButtonComponent'
 import InputForm from '../../components/InputForm/InputForm'
 import { WrapperContainerLeft, WrapperContainerRight, WrapperTextLight } from './style'
-import imageLogo from '../../assets/images/logo-login.png'
+import imageLogo from '../../assets/image/logo-login.png'
 import { Image } from 'antd'
 import { useState } from 'react'
 import { EyeFilled, EyeInvisibleFilled } from '@ant-design/icons'
@@ -136,7 +136,7 @@ const RegisterPage = () => {
         </WrapperContainerLeft>
         <WrapperContainerRight>
           <Image src={imageLogo} preview={false} alt="iamge-logo" height="203px" width="203px" />
-          <h4>Mua sắm tại LTTD</h4>
+          <h4>Mua sắm tại BookStore</h4>
         </WrapperContainerRight>
       </div>
     </div >
