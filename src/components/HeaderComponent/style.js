@@ -1,6 +1,7 @@
 import { Row } from "antd";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
+import imageShop from '../../assets/image/Shop.png';
 
 export const WrapperHeader = styled(Row)`
     background-color: rgb(26, 148, 255);
@@ -12,15 +13,15 @@ export const WrapperHeader = styled(Row)`
 `
 
 export const WrapperTextHeader = styled(Link)`
-    font-size: 18px;
-    color: #fff;
-    font-weight: bold;
-    text-align: left;
-    &:hover {
-        font-size: 18px;
-        color: #fff;
-    }
-`
+    align-items: center;    
+    display: inline-block; 
+    background-size: contain;
+    background-repeat: no-repeat; 
+    height: 0px; 
+    width: 100%; 
+    margin-left: 40px;
+    margin-top: 0px;
+`;
 
 export const WrapperHeaderAccout = styled.div`
     display: flex;
