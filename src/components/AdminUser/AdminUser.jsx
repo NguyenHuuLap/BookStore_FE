@@ -62,7 +62,7 @@ const AdminUser = () => {
   const handleDelteManyUsers = (ids) => {
     mutationDeletedMany.mutate({ ids: ids, token: user?.access_token }, {
       onSettled: () => {
-        queryClient.invalidateQueries(['users'])
+        queryUser.refetch()
       }
     })
   }
@@ -78,6 +78,11 @@ const AdminUser = () => {
       return res
     },
   )
+
+  const getAllUser = async () => {
+    const res = await UserService.getAllUser()
+    return res
+  }
 
   const fetchGetDetailsUser = async (rowSelected) => {
     const res = await UserService.getDetailsUser(rowSelected)
@@ -105,7 +110,7 @@ const AdminUser = () => {
     }
   }, [rowSelected, isOpenDrawer])
 
-  const handleDetailsProduct = () => {
+  const handleDetailsUser = () => {
     setIsOpenDrawer(true)
   }
 
@@ -113,14 +118,16 @@ const AdminUser = () => {
   const { data: dataDeleted, isLoading: isLoadingDeleted, isSuccess: isSuccessDelected, isError: isErrorDeleted } = mutationDeleted
   const { data: dataDeletedMany, isLoading: isLoadingDeletedMany, isSuccess: isSuccessDelectedMany, isError: isErrorDeletedMany } = mutationDeletedMany
 
-  const queryClient = useQueryClient()
-  const users = queryClient.getQueryData(['users'])
-  const isFetchingUser = useIsFetching(['users'])
+  // const queryClient = useQueryClient()
+  // const users = queryClient.getQueryData(['users'])
+  // const isFetchingUser = useIsFetching(['users'])
+  const queryUser = useQuery({queryKey: ['user'], queryFn: getAllUser})
+  const { isLoading: isLoadingUser, data: users } = queryUser
   const renderAction = () => {
     return (
       <div>
         <DeleteOutlined style={{ color: 'red', fontSize: '30px', cursor: 'pointer' }} onClick={() => setIsModalOpenDelete(true)} />
-        <EditOutlined style={{ color: 'orange', fontSize: '30px', cursor: 'pointer' }} onClick={handleDetailsProduct} />
+        <EditOutlined style={{ color: 'orange', fontSize: '30px', cursor: 'pointer' }} onClick={handleDetailsUser} />
       </div>
     )
   }
@@ -301,7 +308,7 @@ const AdminUser = () => {
   const handleDeleteUser = () => {
     mutationDeleted.mutate({ id: rowSelected, token: user?.access_token }, {
       onSettled: () => {
-        queryClient.invalidateQueries(['users'])
+       queryUser.refetch()
       }
     })
   }
@@ -312,8 +319,6 @@ const AdminUser = () => {
       [e.target.name]: e.target.value
     })
   }
-
-  
 
   const handleOnchangeAvatarDetails = async ({ fileList }) => {
     const file = fileList[0]
@@ -328,7 +333,7 @@ const AdminUser = () => {
   const onUpdateUser = () => {
     mutationUpdate.mutate({ id: rowSelected, token: user?.access_token, ...stateUserDetails }, {
       onSettled: () => {
-        queryClient.invalidateQueries(['users'])
+        queryUser.refetch()
       }
     })
   }
@@ -337,7 +342,7 @@ const AdminUser = () => {
     <div>
       <WrapperHeader>Quản lý người dùng</WrapperHeader>
       <div style={{ marginTop: '20px' }}>
-        <TableComponent handleDelteMany={handleDelteManyUsers} columns={columns} isLoading={isFetchingUser} data={dataTable} onRow={(record, rowIndex) => {
+        <TableComponent handleDelteMany={handleDelteManyUsers} columns={columns} isLoading={isLoadingUser} data={dataTable} onRow={(record, rowIndex) => {
           return {
             onClick: event => {
               setRowSelected(record._id)

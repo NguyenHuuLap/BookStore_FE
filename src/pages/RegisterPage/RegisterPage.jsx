@@ -1,70 +1,95 @@
-import React, { useEffect } from 'react'
-import ButtonComponent from '../../components/ButtonComponent/ButtonComponent'
-import InputForm from '../../components/InputForm/InputForm'
-import { WrapperContainerLeft, WrapperContainerRight, WrapperTextLight } from './style'
-import imageLogo from '../../assets/image/logo-login.png'
-import { Image } from 'antd'
-import { useState } from 'react'
-import { EyeFilled, EyeInvisibleFilled } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
-import * as UserService from '../../services/UserService'
-import { useMutationHooks } from '../../hooks/useMutationHook'
-import Loading from '../../components/LoadingComponent/Loading'
-import * as message from '../../components/Message/Message'
-import { useSelector, useDispatch } from 'react-redux'
-
-
+import React, { useEffect } from 'react';
+import ButtonComponent from '../../components/ButtonComponent/ButtonComponent';
+import InputForm from '../../components/InputForm/InputForm';
+import { WrapperContainerLeft, WrapperContainerRight, WrapperTextLight } from './style';
+import imageLogo from '../../assets/image/logo-login.png';
+import { Image } from 'antd';
+import { useState } from 'react';
+import { EyeFilled, EyeInvisibleFilled } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import * as UserService from '../../services/UserService';
+import { useMutationHooks } from '../../hooks/useMutationHook';
+import Loading from '../../components/LoadingComponent/Loading';
+import * as message from '../../components/Message/Message';
+import { useSelector, useDispatch } from 'react-redux';
 
 import { updateUser } from '../../redux/slides/userSlide';
 
 import { Button, Upload } from 'antd';
-import { UploadOutlined } from '@ant-design/icons'
+import { UploadOutlined } from '@ant-design/icons';
 import { getBase64 } from '../../utils';
 
 const RegisterPage = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [isShowPassword, setIsShowPassword] = useState(false)
-  const [isShowConfirmPassword, setIsShowConfirmPassword] = useState(false)
+  const [isShowPassword, setIsShowPassword] = useState(false);
+  const [isShowConfirmPassword, setIsShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [confirmPasswordError, setConfirmPasswordError] = useState(false);
 
   const handleOnchangeEmail = (value) => {
-    setEmail(value)
-  }
+    setEmail(value);
+    setEmailError(false);
+  };
 
-  const mutation = useMutationHooks(
-    data => UserService.registerUser(data)
-  )
+  const mutation = useMutationHooks((data) => UserService.registerUser(data));
 
-  const { data, isLoading, isSuccess, isError } = mutation
+  const { data, isLoading, isSuccess, isError } = mutation;
 
   useEffect(() => {
     if (isSuccess && data?.message === 'SUCCESS') {
-      message.success('Đăng ký thành công!')
-      handleNavigateLogin()
+      message.success('Đăng ký thành công!');
+      handleNavigateLogin();
     } else if (isError) {
-      message.error('Đăng ký thất bại!')
+      message.error('Đăng ký thất bại!');
     }
-  }, [isSuccess, isError])
-  
+  }, [isSuccess, isError]);
+
   const handleOnchangePassword = (value) => {
-    setPassword(value)
-  }
+    setPassword(value);
+    setPasswordError(false);
+  };
 
   const handleOnchangeConfirmPassword = (value) => {
-    setConfirmPassword(value)
-  }
+    setConfirmPassword(value);
+    setConfirmPasswordError(false);
+  };
 
   const handleNavigateLogin = () => {
-    navigate('/login')
-  }
+    navigate('/login');
+  };
 
   const handleSignUp = () => {
-    mutation.mutate({ email, password, confirmPassword })
-  }
+    if (!email.trim()) {
+      setEmailError(true);
+    }
+    if (!password.trim()) {
+      setPasswordError(true);
+    }
+    if (!confirmPassword.trim()) {
+      setConfirmPasswordError(true);
+    }
+    mutation.mutate({ email, password, confirmPassword });
+  };
 
+  // Handle registration when Enter key is pressed anywhere on the page
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'Enter') {
+        handleSignUp();
+      }
+    };
+
+    document.body.addEventListener('keypress', handleKeyPress);
+
+    return () => {
+      document.body.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [handleSignUp]);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.53)', height: '100vh' }}>
@@ -73,6 +98,7 @@ const RegisterPage = () => {
           <h1>Xin chào</h1>
           <p>Đăng nhập vào tạo tài khoản</p>
           <InputForm style={{ marginBottom: '10px' }} placeholder="abc@gmail.com" value={email} onChange={handleOnchangeEmail} />
+          {emailError && <span style={{ color: 'red', fontSize: '12px' }}>Vui lòng nhập email</span>}
           <div style={{ position: 'relative' }}>
             <span
               onClick={() => setIsShowPassword(!isShowPassword)}
@@ -92,6 +118,7 @@ const RegisterPage = () => {
             </span>
             <InputForm placeholder="password" style={{ marginBottom: '10px' }} type={isShowPassword ? "text" : "password"}
               value={password} onChange={handleOnchangePassword} />
+            {passwordError && <span style={{ color: 'red', fontSize: '12px' }}>Vui lòng nhập mật khẩu</span>}
           </div>
           <div style={{ position: 'relative' }}>
             <span
@@ -113,6 +140,7 @@ const RegisterPage = () => {
             <InputForm placeholder="comfirm password" type={isShowConfirmPassword ? "text" : "password"}
               value={confirmPassword} onChange={handleOnchangeConfirmPassword}
             />
+            {confirmPasswordError && <span style={{ color: 'red', fontSize: '12px' }}>Vui lòng nhập lại mật khẩu</span>}
           </div>
           {/* {data?.status === 'ERR' && <span style={{ color: 'red' }}>{data?.message}</span>} */}
           <Loading isLoading={isLoading}>
@@ -139,8 +167,8 @@ const RegisterPage = () => {
           <h4>Mua sắm tại BookStore</h4>
         </WrapperContainerRight>
       </div>
-    </div >
-  )
-}
+    </div>
+  );
+};
 
-export default RegisterPage
+export default RegisterPage;

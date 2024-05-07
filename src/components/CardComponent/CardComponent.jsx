@@ -4,13 +4,19 @@ import { StarFilled } from '@ant-design/icons'
 import logo from '../../assets/image/logo.png'
 import { useNavigate } from 'react-router-dom'
 import { convertPrice } from '../../utils'
+import { useMemo } from 'react';
 
 const CardComponent = (props) => {
-    const { countInStock, description, image, name, price, rating, type, discount, selled, id } = props
-    const navigate = useNavigate()
+    const { countInStock, description, image, name, price, rating, type, discount, selled, id } = props;
+    const navigate = useNavigate();
+
     const handleDetailsProduct = (id) => {
-        navigate(`/product-details/${id}`)
+        navigate(`/product-details/${id}`);
     }
+
+    // Tính giá giảm giá
+    const priceDiscount = useMemo(() => price - (price * (discount / 100)), [price, discount]);
+
     return (
         <WrapperCardStyle
             hoverable
@@ -18,7 +24,7 @@ const CardComponent = (props) => {
             style={{ width: 200 }}
             bodyStyle={{ padding: '10px' }}
             cover={<img alt="example" src={image} />}
-            onClick={() =>  handleDetailsProduct(id)}
+            onClick={() => handleDetailsProduct(id)}
         >
             <img
                 src={logo}
@@ -36,16 +42,17 @@ const CardComponent = (props) => {
                 <span style={{ marginRight: '4px' }}>
                     <span>{rating} </span> <StarFilled style={{ fontSize: '12px', color: 'rgb(253, 216, 54)' }} />
                 </span>
-                <WrapperStyleTextSell> | Da ban {selled || 1000}+</WrapperStyleTextSell>
+                <WrapperStyleTextSell> | Da ban {selled }+</WrapperStyleTextSell>
             </WrapperReportText>
             <WrapperPriceText>
-                <span style={{ marginRight: '8px' }}>{convertPrice(price)}</span>
-                <WrapperDiscountText>
-                    - {discount || 5} %
-                </WrapperDiscountText>
+                <span style={{ marginRight: '8px' }}>{convertPrice(priceDiscount)}</span>
+                <WrapperDiscountText>- {discount || 5}%</WrapperDiscountText>
+            </WrapperPriceText>
+            <WrapperPriceText>
+                <span style={{ color: '#888888', textDecoration: 'line-through' }}>{convertPrice(price)}</span>
             </WrapperPriceText>
         </WrapperCardStyle>
-    )
+    );
 }
 
-export default CardComponent
+export default CardComponent;

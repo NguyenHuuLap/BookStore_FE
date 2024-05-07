@@ -95,19 +95,23 @@ const OrderPage = () => {
 
   const priceMemo = useMemo(() => {
     const result = order?.orderItemsSlected?.reduce((total, cur) => {
-      return total + ((cur.price * cur.amount))
-    },0)
-    return result
-  },[order])
-
-  const priceDiscountMemo = useMemo(() => {
-    const result = order?.orderItemsSlected?.reduce((total, cur) => {
-      const totalDiscount = cur.discount ? cur.discount : 0
-      return total + (priceMemo * (totalDiscount  * cur.amount) / 100)
+      const priceAfterDiscount = cur.price * (1 - (cur.discount || 0) / 100); // Tính giá sau khi giảm giá
+      return total + (priceAfterDiscount * cur.amount); // Tính tổng tiền sau giảm giá cho sản phẩm hiện tại
     },0)
     if(Number(result)){
       return result
     }
+    return 0
+  },[order])
+
+  const priceDiscountMemo = useMemo(() => {
+    // const result = order?.orderItemsSlected?.reduce((total, cur) => {
+    //   const priceAfterDiscount = cur.price * (1 - (cur.discount || 0) / 100); // Tính giá sau khi giảm giá
+    //   return total + (priceAfterDiscount * cur.amount); // Tính tổng tiền sau giảm giá cho sản phẩm hiện tại
+    // },0)
+    // if(Number(result)){
+    //   return result
+    // }
     return 0
   },[order])
 
@@ -122,7 +126,7 @@ const OrderPage = () => {
   },[priceMemo])
 
   const totalPriceMemo = useMemo(() => {
-    return Number(priceMemo) - Number(priceDiscountMemo) + Number(diliveryPriceMemo)
+    return Number(priceMemo) + Number(diliveryPriceMemo)
   },[priceMemo,priceDiscountMemo, diliveryPriceMemo])
 
   const handleRemoveAllOrder = () => {
@@ -237,7 +241,8 @@ const OrderPage = () => {
                 </div>
                 <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                   <span>
-                    <span style={{ fontSize: '13px', color: '#242424' }}>{convertPrice(order?.price)}</span>
+                    <span style={{ fontSize: '13px', color: '#333', fontWeight: '650' }}>{convertPrice((order?.price - order?.price*(order?.discount / 100)))}</span>
+                    {/* <span style={{ fontSize: '13px', color: '#242424' }}>{convertPrice(order?.price)}</span> */}
                   </span>
                   <WrapperCountOrder>
                     <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('decrease',order?.product, order?.amount === 1)}>
@@ -248,7 +253,7 @@ const OrderPage = () => {
                         <PlusOutlined style={{ color: '#000', fontSize: '10px' }}/>
                     </button>
                   </WrapperCountOrder>
-                  <span style={{color: 'rgb(255, 66, 78)', fontSize: '13px', fontWeight: 500}}>{convertPrice(order?.price * order?.amount)}</span>
+                  <span style={{color: 'rgb(255, 66, 78)', fontSize: '13px', fontWeight: 500}}>{convertPrice((order?.price - order?.price*(order?.discount / 100)) * order?.amount)}</span>
                   <DeleteOutlined style={{cursor: 'pointer'}} onClick={() => handleDeleteOrder(order?.product)}/>
                 </div>
               </WrapperItemOrder>

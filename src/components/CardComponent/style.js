@@ -29,19 +29,26 @@ export const WrapperReportText = styled.div`
 `
 
 export const WrapperPriceText = styled.div`
-    color: rgb(255, 66, 78);
+    color: #C92127;
     font-size: 16px;
     font-weight: 500;
 `
 
 export const WrapperDiscountText = styled.span`
-    color: rgb(255, 66, 78);
+margin-left: 8px;
+    padding: 3px 4px;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    background-color: #C92127;
+    color: #fff;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0px;
 `
 
 export const WrapperStyleTextSell = styled.span`
     font-size: 15px;
     line-height: 24px;
-    color: rgb(120, 120, 120)
+    color: rgb(120, 120, 120);
 `

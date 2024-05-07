@@ -84,13 +84,13 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
   return (
     <div style={{ heiht: '100%', width: '100%', display: 'flex', background: '#9255FD', justifyContent: 'center' }}>
       <WrapperHeader style={{ justifyContent: isHiddenSearch && isHiddenSearch ? 'space-between' : 'unset' }}>
-        <Col span={5}>
+        <Col span={3}>
           <WrapperTextHeader to='/'>
             <img src={imageShop} alt="Shop Logo" style={{ height: 'auto', width: '100%', maxWidth: '100px' }} />
           </WrapperTextHeader>
         </Col>
         {!isHiddenSearch && (
-          <Col span={13}>
+          <Col span={14}>
             <ButttonInputSearch
               size="large"
               bordered={false}
@@ -101,7 +101,7 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
             />
           </Col>
         )}
-        <Col span={6} style={{ display: 'flex', gap: '54px', alignItems: 'center' }}>
+        <Col span={4} style={{ display: 'flex', gap: '60px', alignItems: 'center', marginLeft: '30px' }}>
           <Loading isLoading={loading}>
             <WrapperHeaderAccout>
               {userAvatar ? (

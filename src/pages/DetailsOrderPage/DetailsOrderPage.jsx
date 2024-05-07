@@ -89,7 +89,7 @@ const DetailsOrderPage = () => {
                     whiteSpace:'nowrap',
                     marginLeft: '10px',
                     height: '70px',
-                  }}>Điện thoại</div>
+                  }}>{order?.name}</div>
                 </WrapperNameProduct>
                 <WrapperItem>{convertPrice(order?.price)}</WrapperItem>
                 <WrapperItem>{order?.amount}</WrapperItem>
