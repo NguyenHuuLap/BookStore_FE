@@ -10,47 +10,62 @@ import Loading from '../LoadingComponent/Loading'
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { addOrderProduct,resetOrder } from '../../redux/slides/orderSlide'
+import { addOrderProduct, resetOrder } from '../../redux/slides/orderSlide'
 import { convertPrice, initFacebookSDK } from '../../utils'
 import { useEffect } from 'react'
 import * as message from '../Message/Message'
 import LikeButtonComponent from '../LikeButtonComponent/LikeButtonComponent'
 import CommentComponent from '../CommentComponent/CommentComponent'
-import { useMemo } from 'react'
+import { useMutationHooks } from '../../hooks/useMutationHook';
+import * as  CartItemService from '../../services/CartItemService'
 
-const ProductDetailsComponent = ({idProduct}) => {
+const ProductDetailsComponent = ({ idProduct }) => {
     const [numProduct, setNumProduct] = useState(1)
     const user = useSelector((state) => state.user)
     const order = useSelector((state) => state.order)
-    const [errorLimitOrder,setErrorLimitOrder] = useState(false)
+    const [errorLimitOrder, setErrorLimitOrder] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
     const dispatch = useDispatch()
 
-    const onChange = (value) => { 
+    const onChange = (value) => {
         setNumProduct(Number(value))
     }
 
+    const mutationAddCartItem = useMutationHooks(
+        (data) => {
+            const {
+                token,
+                ...rests } = data
+            const res = CartItemService.createCartItem(
+                { ...rests }, token)
+            return res
+        },
+    )
+    const { data, isLoading: isLoadingAddCartItem, isSuccess, isError } = mutationAddCartItem
+
+
     const fetchGetDetailsProduct = async (context) => {
         const id = context?.queryKey && context?.queryKey[1]
-        if(id) {
+        if (id) {
             const res = await ProductService.getDetailsProduct(id)
             return res.data
         }
     }
+    console.log('cart', order, user)
 
     useEffect(() => {
         initFacebookSDK()
     }, [])
 
     useEffect(() => {
-        const orderRedux = order?.orderItems?.find((item) => item.product === productDetails?._id) 
-        if((orderRedux?.amount + numProduct) <= orderRedux?.countInstock || (!orderRedux && productDetails?.countInStock > 0)) {
+        const orderRedux = order?.orderItems?.find((item) => item.product === productDetails?._id)
+        if ((orderRedux?.amount + numProduct) <= orderRedux?.countInstock || (!orderRedux && productDetails?.countInStock > 0)) {
             setErrorLimitOrder(false)
-        } else if(productDetails?.countInStock === 0){
+        } else if (productDetails?.countInStock === 0) {
             setErrorLimitOrder(true)
         }
-    },[numProduct])
+    }, [numProduct])
 
     useEffect(() => {
         if (order && order.isSucessOrder) {
@@ -62,55 +77,46 @@ const ProductDetailsComponent = ({idProduct}) => {
     }, [order?.isSucessOrder])
 
     const handleChangeCount = (type, limited) => {
-        if(type === 'increase') {
-            if(!limited) {
+        if (type === 'increase') {
+            if (!limited) {
                 setNumProduct(numProduct + 1)
             }
-        }else {
-            if(!limited) {
+        } else {
+            if (!limited) {
                 setNumProduct(numProduct - 1)
             }
         }
     }
 
-    const { isLoading, data: productDetails } = useQuery(['product-details', idProduct], fetchGetDetailsProduct, { enabled : !!idProduct})
-    const handleAddOrderProduct = () => {
-        if(!user?.id) {
-            navigate('/login', {state: location?.pathname})
-        }else {
-            // {
-            //     name: { type: String, required: true },
-            //     amount: { type: Number, required: true },
-            //     image: { type: String, required: true },
-            //     price: { type: Number, required: true },
-            //     product: {
-            //         type: mongoose.Schema.Types.ObjectId,
-            //         ref: 'Product',
-            //         required: true,
-            //     },
-            // },
+    const { isLoading, data: productDetails } = useQuery(['product-details', idProduct], fetchGetDetailsProduct, { enabled: !!idProduct })
+    const handleAddCartItem = () => {
+        if (!user?.id) {
+            navigate('/login', { state: location?.pathname })
+        } else {
             const orderRedux = order?.orderItems?.find((item) => item.product === productDetails?._id)
-            if((orderRedux?.amount + numProduct) <= orderRedux?.countInstock || (!orderRedux && productDetails?.countInStock > 0)) {
-                dispatch(addOrderProduct({
-                    orderItem: {
+            if ((orderRedux?.amount + numProduct) <= orderRedux?.countInstock || (!orderRedux && productDetails?.countInStock > 0)) {
+                // dispatch(addOrderProduct({
+                mutationAddCartItem.mutate({
+                    user: user?.id,
+                    cartItems: [{
                         name: productDetails?.name,
                         amount: numProduct,
                         image: productDetails?.image,
                         price: productDetails?.price,
                         product: productDetails?._id,
                         discount: productDetails?.discount,
-                        countInstock: productDetails?.countInStock
-                    }
-                }))
+                    }],
+                });
             } else {
-                setErrorLimitOrder(true)
+                setErrorLimitOrder(true);
             }
         }
+
     }
 
     return (
         <Loading isLoading={isLoading}>
-            <Row style={{ padding: '16px', background: '#fff', borderRadius: '4px', height:'100%' }}>
+            <Row style={{ padding: '16px', background: '#fff', borderRadius: '4px', height: '100%' }}>
                 <Col span={10} style={{ borderRight: '1px solid #e5e5e5', paddingRight: '8px' }}>
                     <Image src={productDetails?.image} alt="image prodcut" preview={false} />
                     <Row style={{ paddingTop: '10px', justifyContent: 'space-between' }}>
@@ -154,19 +160,19 @@ const ProductDetailsComponent = ({idProduct}) => {
                         <span className='change-address'>Đổi địa chỉ</span>
                     </WrapperAddressProduct>
                     <LikeButtonComponent
-                     dataHref={ process.env.REACT_APP_IS_LOCAL 
-                                ? "https://developers.facebook.com/docs/plugins/" 
-                                : window.location.href
-                            } 
+                        dataHref={process.env.REACT_APP_IS_LOCAL
+                            ? "https://developers.facebook.com/docs/plugins/"
+                            : window.location.href
+                        }
                     />
                     <div style={{ margin: '10px 0 20px', padding: '10px 0', borderTop: '1px solid #e5e5e5', borderBottom: '1px solid #e5e5e5' }}>
                         <div style={{ marginBottom: '10px' }}>Số lượng</div>
                         <WrapperQualityProduct>
-                            <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('decrease',numProduct === 1)}>
+                            <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('decrease', numProduct === 1)}>
                                 <MinusOutlined style={{ color: '#000', fontSize: '20px' }} />
                             </button>
                             <WrapperInputNumber onChange={onChange} defaultValue={1} max={productDetails?.countInStock} min={1} value={numProduct} size="small" />
-                            <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('increase',  numProduct === productDetails?.countInStock)}>
+                            <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('increase', numProduct === productDetails?.countInStock)}>
                                 <PlusOutlined style={{ color: '#000', fontSize: '20px' }} />
                             </button>
                         </WrapperQualityProduct>
@@ -182,11 +188,11 @@ const ProductDetailsComponent = ({idProduct}) => {
                                     border: 'none',
                                     borderRadius: '4px'
                                 }}
-                                onClick={handleAddOrderProduct}
+                                onClick={handleAddCartItem}
                                 textbutton={'Chọn mua'}
                                 styleTextButton={{ color: '#fff', fontSize: '15px', fontWeight: '700' }}
                             ></ButtonComponent>
-                            {errorLimitOrder && <div style={{color: 'red'}}>San pham het hang</div>}
+                            {errorLimitOrder && <div style={{ color: 'red' }}>San pham het hang</div>}
                         </div>
                         <ButtonComponent
                             size={40}
@@ -202,15 +208,15 @@ const ProductDetailsComponent = ({idProduct}) => {
                         ></ButtonComponent>
                     </div>
                 </Col>
-                <CommentComponent 
-                    dataHref={process.env.REACT_APP_IS_LOCAL 
+                <CommentComponent
+                    dataHref={process.env.REACT_APP_IS_LOCAL
                         ? "https://developers.facebook.com/docs/plugins/comments#configurator"
                         : window.location.href
-                    } 
-                    width="1270" 
+                    }
+                    width="1270"
                 />
             </Row >
-            
+
         </Loading>
     )
 }

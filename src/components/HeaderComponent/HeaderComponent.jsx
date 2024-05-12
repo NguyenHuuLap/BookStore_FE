@@ -7,7 +7,7 @@ import {
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import ButttonInputSearch from '../ButtonInputSearch/ButtonInputSearch';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import * as UserService from '../../services/UserService'
 import { resetUser } from '../../redux/slides/userSlide'
@@ -16,17 +16,33 @@ import Loading from '../LoadingComponent/Loading';
 import { useEffect } from 'react';
 import { searchProduct } from '../../redux/slides/productSlide'
 import imageShop from '../../assets/image/Shop.png'
+import * as  CartItemService from '../../services/CartItemService'
+import { useQuery } from '@tanstack/react-query';
+import { useMutationHooks } from '../../hooks/useMutationHook';
 
 
 const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
   const navigate = useNavigate()
-  const user = useSelector((state) => state.user)
   const dispatch = useDispatch()
   const [userName, setUserName] = useState('')
   const [userAvatar, setUserAvatar] = useState('')
   const [search, setSearch] = useState('')
   const [isOpenPopup, setIsOpenPopup] = useState(false)
-  const order = useSelector((state) => state.order)
+  const user = useSelector((state) => state.user);
+
+  const location = useLocation()
+  const { state } = location
+
+  const fetchCartItem = async () => {
+    const res = await CartItemService.getDetailsCartItem(state?.id, state?.token);
+    return res.data;
+  };
+
+  const queryCartItem = useQuery({ queryKey: ['cartItem'], queryFn: fetchCartItem }, {
+    enabled: state?.id && state?.token
+  });
+  const { isLoading, data } = queryCartItem;
+
   const [loading, setLoading] = useState(false)
   const handleNavigateLogin = () => {
     navigate('/login')
@@ -45,6 +61,25 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
     setUserAvatar(user?.avatar)
     setLoading(false)
   }, [user?.name, user?.avatar])
+
+  const handleDetailsCart = (id) => {
+    navigate(`/order/${id}`, {
+      state: {
+        token: state?.token
+      }
+    });
+  };
+  const cartItemIds = data?.cartItems?.map(item => item.id);
+  const mutation = useMutationHooks(
+    (data) => {
+      const { id, token , cartItems, userId } = data
+      const res = CartItemService.getDetailsCartItem(id, token,cartItems, userId)
+      console.log('data',data)
+      return res
+    }
+  )
+  console.log('CartItem IDs:', cartItemIds);
+  // console.log('Data:', data);
 
   const content = (
     <div>
@@ -132,8 +167,9 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
             </WrapperHeaderAccout>
           </Loading>
           {!isHiddenCart && (
-            <div onClick={() => navigate('/order')} style={{ cursor: 'pointer' }}>
-              <Badge count={order?.orderItems?.length} size="small">
+            <div onClick={() => handleDetailsCart(data?.cartItems?.id)}
+              style={{ cursor: 'pointer' }}>
+              <Badge count={data?.cartItems?.length} size="small">
                 <ShoppingCartOutlined style={{ fontSize: '30px', color: '#fff' }} />
               </Badge>
               <WrapperTextHeaderSmall>Giỏ hàng</WrapperTextHeaderSmall>

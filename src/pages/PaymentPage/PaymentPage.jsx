@@ -35,6 +35,7 @@ const PaymentPage = () => {
     address: '',
     city: ''
   })
+  
   const [form] = Form.useForm();
 
   const dispatch = useDispatch()
