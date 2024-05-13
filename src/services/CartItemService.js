@@ -18,3 +18,16 @@ export const getDetailsCartItem = async (id, access_token) => {
     })
     return res.data
 }
+
+export const updateAmount = async (cartItemId, access_token, data, type) => {
+    const res = await axiosJWT.put(`${process.env.REACT_APP_API_URL}/cartitem/update/${cartItemId}`, {
+        ...data,
+        userId: cartItemId,
+        type: type
+    }, {
+        headers: {
+            token: `Bearer ${access_token}`,
+        }
+    });
+    return res.data;
+};

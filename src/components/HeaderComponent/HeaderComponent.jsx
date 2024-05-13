@@ -34,12 +34,12 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
   const { state } = location
 
   const fetchCartItem = async () => {
-    const res = await CartItemService.getDetailsCartItem(state?.id, state?.token);
+    const res = await CartItemService.getDetailsCartItem(user?.id, user?.access_token)
     return res.data;
   };
 
-  const queryCartItem = useQuery({ queryKey: ['cartItem'], queryFn: fetchCartItem }, {
-    enabled: state?.id && state?.token
+  const queryCartItem = useQuery({ queryKey: ['user'], queryFn: fetchCartItem }, {
+    // enabled: state?.id && state?.token
   });
   const { isLoading, data } = queryCartItem;
 
@@ -65,21 +65,24 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
   const handleDetailsCart = (id) => {
     navigate(`/order/${id}`, {
       state: {
-        token: state?.token
+        id: user?.id,
+        token: user?.access_token
       }
     });
   };
-  const cartItemIds = data?.cartItems?.map(item => item.id);
-  const mutation = useMutationHooks(
-    (data) => {
-      const { id, token , cartItems, userId } = data
-      const res = CartItemService.getDetailsCartItem(id, token,cartItems, userId)
-      console.log('data',data)
-      return res
-    }
-  )
-  console.log('CartItem IDs:', cartItemIds);
+
+  // const mutation = useMutationHooks(
+  //   (data) => {
+  //     const { id, token, cartItems, userId } = data
+  //     const res = CartItemService.getDetailsCartItem(id, token, cartItems, userId)
+  //     return res
+  //   }
+  // )
+  // console.log('data:', data);
+  // console.log('id', data?.map((cart) => cart.cartItems?.length))
+
   // console.log('Data:', data);
+  // console.log('cartItem', data.cartItems.length)
 
   const content = (
     <div>
@@ -166,15 +169,16 @@ const HeaderComponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
               )}
             </WrapperHeaderAccout>
           </Loading>
-          {!isHiddenCart && (
-            <div onClick={() => handleDetailsCart(data?.cartItems?.id)}
-              style={{ cursor: 'pointer' }}>
-              <Badge count={data?.cartItems?.length} size="small">
-                <ShoppingCartOutlined style={{ fontSize: '30px', color: '#fff' }} />
-              </Badge>
-              <WrapperTextHeaderSmall>Giỏ hàng</WrapperTextHeaderSmall>
-            </div>
-          )}
+          <Loading isLoading={isLoading}>
+            {!isHiddenCart && (
+              <div onClick={() => handleDetailsCart(data?._id)} style={{ cursor: 'pointer' }}>
+                <Badge count={data?.cartItems.length} size="small">
+                  <ShoppingCartOutlined style={{ fontSize: '30px', color: '#fff' }} />
+                </Badge>
+                <WrapperTextHeaderSmall>Giỏ hàng</WrapperTextHeaderSmall>
+              </div>
+            )}
+          </Loading>
         </Col>
       </WrapperHeader>
     </div>

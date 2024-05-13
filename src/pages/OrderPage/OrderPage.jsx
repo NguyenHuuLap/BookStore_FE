@@ -20,11 +20,8 @@ import * as CartItemService from '../../services/CartItemService'
 import { useLocation, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query';
 
-
 const OrderPage = () => {
-  // const order = useSelector((state) => state.order)
   const user = useSelector((state) => state.user)
-
   const location = useLocation()
   const { state } = location
 
@@ -49,37 +46,56 @@ const OrderPage = () => {
     }
   };
 
-  const fetchDetailsCartItem = async () => { 
-    const res = await CartItemService.getDetailsCartItem(state?.id, state?.token);
-
-    return res.dataCartItem;
-  }
-
-  const queryCartItem = useQuery({ queryKey: ['cartItem'], queryFn: fetchDetailsCartItem }, {
-    enabled: state?.id && state?.token
-  })
+  const fetchCartItem = async () => {
+    const res = await CartItemService.getDetailsCartItem(state?.id, state?.token)
+    return res.data;
+  };
+  const queryCartItem = useQuery({ queryKey: ['user'], queryFn: fetchCartItem }, {
+    // enabled: state?.id && state?.token
+  });
 
   const mutation = useMutationHooks(
     (data) => {
-      const { id, token , cartItems, userId } = data
-      const res = CartItemService.getDetailsCartItem(id, token,cartItems, userId)
-      return res
+      const { id, access_token, ...rests } = data
+      CartItemService.updateAmount(id, ...rests, access_token)
     }
   )
+  const { data: dataUpdate, isLoading: isLoadingUpdate, isSuccess, isError } = mutation
 
- const { isLoading: isLoadingCartItem, data: dataCartItem } = queryCartItem
+  // const mutation = useMutationHooks(
+  //   (data) => {
+  //     const { id, token , cartItems, userId } = data
+  //     const res = CartItemService.getDetailsCartItem(id, token,cartItems, userId)
+  //     return res
+  //   }
+  // )
 
-  const handleChangeCount = (type, idProduct, limited) => {
-    if (type === 'increase') {
-      if (!limited) {
-        dispatch(increaseAmount({ idProduct }))
+  const { isLoading: isLoadingCartItem, data: dataCartItem } = queryCartItem;
+
+  const handleChangeCount = async (type, idProduct, limited, access_token) => {
+    const userId = user.id;
+
+    const cartItem = dataCartItem?.cartItems?.find(item => item.product === idProduct);
+    console.log('Cart Item:', cartItem);
+    if (cartItem) {
+      if (type === 'increase') {
+        if (!limited) {
+          // dispatch(increaseAmount({ idProduct }));
+          mutation.mutate({ id: idProduct, cartItem, access_token: access_token })
+          await CartItemService.updateAmount(userId, access_token, cartItem, type);   // Truyền loại hành động và dữ liệu cần cập nhật
+        }
+
+      } else {
+        if (!limited) {
+          // dispatch(decreaseAmount({ idProduct }));
+          mutation.mutate({ id: idProduct, cartItem, access_token: access_token })
+          await CartItemService.updateAmount(userId, access_token, cartItem, type); // Truyền loại hành động và dữ liệu cần cập nhật
+        }
       }
     } else {
-      if (!limited) {
-        dispatch(decreaseAmount({ idProduct }))
-      }
+      console.error('Sản phẩm không tồn tại trong giỏ hàng');
     }
-  }
+  };
 
   const handleDeleteOrder = (idProduct) => {
     dispatch(removeOrderProduct({ idProduct }))
@@ -96,6 +112,7 @@ const OrderPage = () => {
       setListChecked([])
     }
   }
+  // console.log('data12', dataCartItem)
 
   useEffect(() => {
     dispatch(selectedOrder({ listChecked }))
@@ -119,14 +136,25 @@ const OrderPage = () => {
   const handleChangeAddress = () => {
     setIsOpenModalUpdateInfo(true)
   }
+  // Thêm hàm để tính toán tổng giá tiền của những sản phẩm có trong listChecked
+  const calculateTotalPrice = (cartItems) => {
+    let totalPrice = 0;
+    cartItems.forEach(cartItem => {
+      if (listChecked.includes(cartItem.product)) {
+        const priceAfterDiscount = cartItem.price * (1 - (cartItem.discount || 0) / 100);
+        totalPrice += priceAfterDiscount * cartItem.amount;
+      }
+    });
+    return totalPrice;
+  };
 
   const priceMemo = useMemo(() => {
-    const result = dataCartItem?.cartItems?.reduce((total, cur) => {
-      const priceAfterDiscount = cur.price * (1 - (cur.discount || 0) / 100);
-      return total + (priceAfterDiscount * cur.amount);
-    }, 0);
-    return Number(result) || 0;
-  }, [dataCartItem]);
+    if (dataCartItem && dataCartItem.cartItems) {
+      return calculateTotalPrice(dataCartItem.cartItems);
+    }
+    return 0;
+  }, [dataCartItem, listChecked]);
+  // console.log('data1', priceMemo)
 
   const priceDiscountMemo = useMemo(() => {
     // const result = order?.orderItemsSlected?.reduce((total, cur) => {
@@ -150,8 +178,9 @@ const OrderPage = () => {
   }, [priceMemo])
 
   const totalPriceMemo = useMemo(() => {
-    return Number(priceMemo) + Number(diliveryPriceMemo)
+    return Number(priceMemo) + Number(diliveryPriceMemo) + Number(priceDiscountMemo)
   }, [priceMemo, priceDiscountMemo, diliveryPriceMemo])
+  // console.log(totalPriceMemo)
 
   const handleRemoveAllOrder = () => {
     if (listChecked?.length > 1) {
@@ -165,19 +194,18 @@ const OrderPage = () => {
     } else if (!user?.phone || !user.address || !user.name || !user.city) {
       setIsOpenModalUpdateInfo(true)
     } else {
-      navigate('/payment')
+      navigate('/payment', {
+        state: {
+          selectedProducts: dataCartItem?.listChecked, // Pass selected products data
+        }
+      });
     }
   }
 
   const mutationUpdate = useMutationHooks(
     (data) => {
-      const { id,
-        token,
-        ...rests } = data
-      const res = UserService.updateUser(
-        id,
-        { ...rests }, token)
-      return res
+      const { id, access_token, ...rests } = data
+      CartItemService.updateAmount(id, rests, access_token)
     },
   )
 
@@ -227,114 +255,116 @@ const OrderPage = () => {
   ]
   return (
     <div style={{ background: '#f5f5fa', with: '100%', height: '100vh' }}>
-       <Loading isLoading={isLoading}>
-      <div style={{ height: '100%', width: '1270px', margin: '0 auto' }}>
-        <h3 style={{ fontWeight: 'bold' }}>Giỏ hàng</h3>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <WrapperLeft>
-            <h4>Phí giao hàng</h4>
-            <WrapperStyleHeaderDilivery>
-              <StepComponent items={itemsDelivery} current={diliveryPriceMemo === 10000
-                ? 2 : diliveryPriceMemo === 20000 ? 1
-                  : dataCartItem.cartItems.length === 0 ? 0 : 3} />
-            </WrapperStyleHeaderDilivery>
-            <WrapperStyleHeader>
-              <span style={{ display: 'inline-block', width: '390px' }}>
-                <CustomCheckbox onChange={handleOnchangeCheckAll} checked={listChecked?.length === dataCartItem?.cartItems?.length}></CustomCheckbox>
-                <span> Tất cả ({dataCartItem?.cartItems?.length} sản phẩm)</span>
-              </span>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Đơn giá</span>
-                <span>Số lượng</span>
-                <span>Thành tiền</span>
-                <DeleteOutlined style={{ cursor: 'pointer' }} onClick={handleRemoveAllOrder} />
-              </div>
-            </WrapperStyleHeader>
-            <WrapperListOrder>
-              {dataCartItem?.cartItems?.map((cartItems) => {
-                return (
-                  <WrapperItemOrder key={cartItems?.product}>
-                    <div style={{ width: '390px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <CustomCheckbox onChange={onChange} value={cartItems?.product} checked={listChecked.includes(cartItems?.product)}></CustomCheckbox>
-                      <img src={cartItems?.image} style={{ width: '77px', height: '79px', objectFit: 'cover' }} />
-                      <div style={{
-                        width: 260,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>{cartItems?.name}</div>
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span>
-                        <span style={{ fontSize: '13px', color: '#333', fontWeight: '650' }}>{convertPrice((cartItems?.price - cartItems?.price * (cartItems?.discount / 100)))}</span>
-                        {/* <span style={{ fontSize: '13px', color: '#242424' }}>{convertPrice(order?.price)}</span> */}
-                      </span>
-                      <WrapperCountOrder>
-                        <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('decrease', cartItems?.product, cartItems?.amount === 1)}>
-                          <MinusOutlined style={{ color: '#000', fontSize: '10px' }} />
-                        </button>
-                        <WrapperInputNumber defaultValue={cartItems?.amount} value={cartItems?.amount} size="small" min={1} max={cartItems?.countInstock} />
-                        <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('increase', cartItems?.product, cartItems?.amount === cartItems.countInstock, cartItems?.amount === 1)}>
-                          <PlusOutlined style={{ color: '#000', fontSize: '10px' }} />
-                        </button>
-                      </WrapperCountOrder>
-                      <span style={{ color: 'rgb(255, 66, 78)', fontSize: '13px', fontWeight: 500 }}>{convertPrice((cartItems?.price - cartItems?.price * (cartItems?.discount / 100)) * cartItems?.amount)}</span>
-                      <DeleteOutlined style={{ cursor: 'pointer' }} onClick={() => handleDeleteOrder(cartItems?.product)} />
-                    </div>
-                  </WrapperItemOrder>
-                )
-              })}
-            </WrapperListOrder>
-          </WrapperLeft>
-          <WrapperRight>
-            <div style={{ width: '100%' }}>
-              <WrapperInfo>
-                <div>
-                  <span>Địa chỉ: </span>
-                  <span style={{ fontWeight: 'bold' }}>{`${user?.address} ${user?.city}`} </span>
-                  <span onClick={handleChangeAddress} style={{ color: '#9255FD', cursor: 'pointer' }}>Thay đổi</span>
-                </div>
-              </WrapperInfo>
-              <WrapperInfo>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Tạm tính</span>
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(priceMemo)}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Giảm giá</span>
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(priceDiscountMemo)}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Phí giao hàng</span>
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(diliveryPriceMemo)}</span>
-                </div>
-              </WrapperInfo>
-              <WrapperTotal>
-                <span>Tổng tiền</span>
-                <span style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ color: 'rgb(254, 56, 52)', fontSize: '24px', fontWeight: 'bold' }}>{convertPrice(totalPriceMemo)}</span>
-                  <span style={{ color: '#000', fontSize: '11px' }}>(Đã bao gồm VAT nếu có)</span>
+      <Loading isLoading={isLoading}>
+        <div style={{ height: '100%', width: '1270px', margin: '0 auto' }}>
+          <h3 style={{ fontWeight: 'bold' }}>Giỏ hàng</h3>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <WrapperLeft>
+              <h4>Phí giao hàng</h4>
+              <WrapperStyleHeaderDilivery>
+                <StepComponent items={itemsDelivery} current={diliveryPriceMemo === 10000
+                  ? 2 : diliveryPriceMemo === 20000 ? 1
+                    : dataCartItem.cartItems.length === 0 ? 0 : 3} />
+              </WrapperStyleHeaderDilivery>
+              <WrapperStyleHeader>
+                <span style={{ display: 'inline-block', width: '390px' }}>
+                  <CustomCheckbox onChange={handleOnchangeCheckAll} checked={listChecked?.length === dataCartItem?.cartItems?.length}></CustomCheckbox>
+                  <span> Tất cả ({dataCartItem?.cartItems?.length} sản phẩm)</span>
                 </span>
-              </WrapperTotal>
-            </div>
-            <ButtonComponent
-              onClick={() => handleAddCard()}
-              size={40}
-              styleButton={{
-                background: 'rgb(255, 57, 69)',
-                height: '48px',
-                width: '320px',
-                border: 'none',
-                borderRadius: '4px'
-              }}
-              textbutton={'Mua hàng'}
-              styleTextButton={{ color: '#fff', fontSize: '15px', fontWeight: '700' }}
-            ></ButtonComponent>
-          </WrapperRight>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Đơn giá</span>
+                  <span>Số lượng</span>
+                  <span>Thành tiền</span>
+                  <DeleteOutlined style={{ cursor: 'pointer' }} onClick={handleRemoveAllOrder} />
+                </div>
+              </WrapperStyleHeader>
+              <WrapperListOrder>
+                {dataCartItem?.cartItems?.map((cartItems) => {
+                  return (
+                    <WrapperItemOrder key={cartItems?.product}>
+                      <div style={{ width: '390px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <CustomCheckbox onChange={onChange} value={cartItems?.product} checked={listChecked.includes(cartItems?.product)}></CustomCheckbox>
+                        <img src={cartItems?.image} style={{ width: '77px', height: '79px', objectFit: 'cover' }} />
+                        <div style={{
+                          width: 260,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>{cartItems?.name}</div>
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>
+                          <span style={{ fontSize: '13px', color: '#333', fontWeight: '650' }}>{convertPrice((cartItems?.price - cartItems?.price * (cartItems?.discount / 100)))}</span>
+                          {/* <span style={{ fontSize: '13px', color: '#242424' }}>{convertPrice(order?.price)}</span> */}
+                        </span>
+                        <WrapperCountOrder>
+                          <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('decrease', cartItems?.product, cartItems?.amount === 1, user?.access_token)}>
+                            <MinusOutlined style={{ color: '#000', fontSize: '10px' }} />
+
+                          </button>
+
+                          <WrapperInputNumber defaultValue={cartItems?.amount} value={cartItems?.amount} size="small" min={1} max={cartItems?.countInstock} />
+                          <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} onClick={() => handleChangeCount('increase', cartItems?.product, cartItems?.amount === cartItems.countInstock, cartItems?.amount === 1, user?.access_tokend)}>
+                            <PlusOutlined style={{ color: '#000', fontSize: '10px' }} />
+                          </button>
+                        </WrapperCountOrder>
+                        <span style={{ color: 'rgb(255, 66, 78)', fontSize: '13px', fontWeight: 500 }}>{convertPrice((cartItems?.price - cartItems?.price * (cartItems?.discount / 100)) * cartItems?.amount)}</span>
+                        <DeleteOutlined style={{ cursor: 'pointer' }} onClick={() => handleDeleteOrder(cartItems?.product)} />
+                      </div>
+                    </WrapperItemOrder>
+                  )
+                })}
+              </WrapperListOrder>
+            </WrapperLeft>
+            <WrapperRight>
+              <div style={{ width: '100%' }}>
+                <WrapperInfo>
+                  <div>
+                    <span>Địa chỉ: </span>
+                    <span style={{ fontWeight: 'bold' }}>{`${user?.address} ${user?.city}`} </span>
+                    <span onClick={handleChangeAddress} style={{ color: '#9255FD', cursor: 'pointer' }}>Thay đổi</span>
+                  </div>
+                </WrapperInfo>
+                <WrapperInfo>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Tạm tính</span>
+                    <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(priceMemo)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Giảm giá</span>
+                    <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(priceDiscountMemo)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Phí giao hàng</span>
+                    <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>{convertPrice(diliveryPriceMemo)}</span>
+                  </div>
+                </WrapperInfo>
+                <WrapperTotal>
+                  <span>Tổng tiền</span>
+                  <span style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: 'rgb(254, 56, 52)', fontSize: '24px', fontWeight: 'bold' }}>{convertPrice(totalPriceMemo)}</span>
+                    <span style={{ color: '#000', fontSize: '11px' }}>(Đã bao gồm VAT nếu có)</span>
+                  </span>
+                </WrapperTotal>
+              </div>
+              <ButtonComponent
+                onClick={() => handleAddCard()}
+                size={40}
+                styleButton={{
+                  background: 'rgb(255, 57, 69)',
+                  height: '48px',
+                  width: '320px',
+                  border: 'none',
+                  borderRadius: '4px'
+                }}
+                textbutton={'Mua hàng'}
+                styleTextButton={{ color: '#fff', fontSize: '15px', fontWeight: '700' }}
+              ></ButtonComponent>
+            </WrapperRight>
+          </div>
         </div>
-      </div>
-      <ModalComponent title="Cập nhật thông tin giao hàng" open={isOpenModalUpdateInfo} onCancel={handleCancleUpdate} onOk={handleUpdateInforUser}>
-        {/* <Loading isLoading={isLoading}> */}
+        <ModalComponent title="Cập nhật thông tin giao hàng" open={isOpenModalUpdateInfo} onCancel={handleCancleUpdate} onOk={handleUpdateInforUser}>
+          {/* <Loading isLoading={isLoading}> */}
           <Form
             name="basic"
             labelCol={{ span: 4 }}
@@ -373,8 +403,8 @@ const OrderPage = () => {
               <InputComponent value={stateUserDetails.address} onChange={handleOnchangeDetails} name="address" />
             </Form.Item>
           </Form>
-        {/* </Loading> */}
-      </ModalComponent>
+          {/* </Loading> */}
+        </ModalComponent>
       </Loading>
     </div>
   )
